@@ -20,8 +20,6 @@ from dotenv import load_dotenv
 
 SRC_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SRC_DIR.parent
-os.chdir(SRC_DIR)
-sys.path.insert(0, str(SRC_DIR))
 
 
 load_dotenv(PROJECT_ROOT / ".env")
