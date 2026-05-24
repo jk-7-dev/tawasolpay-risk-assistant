@@ -3,6 +3,10 @@ TawasolPay Risk Briefing — Streamlit UI
 Wires DataIngestionEngine → RiskScoringEngine → rag_agent → explainer
 """
 import os
+os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
+
 import sys
 import time
 from pathlib import Path
@@ -19,7 +23,7 @@ PROJECT_ROOT = SRC_DIR.parent
 os.chdir(SRC_DIR)
 sys.path.insert(0, str(SRC_DIR))
 
-os.environ["ANONYMIZED_TELEMETRY"] = "False"
+
 load_dotenv(PROJECT_ROOT / ".env")
 
 # Local imports (must come AFTER chdir/sys.path)
