@@ -209,6 +209,22 @@ st.markdown("""
         margin: 1.5rem 0;
         border: none;
     }
+    
+    /* Expander content styling */
+    .expander-action {
+        color: #58d7ed !important;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    
+    .expander-action b {
+        color: #58d7ed !important;
+    }
+    
+    /* Hide markdown dividers */
+    .stMarkdown hr {
+        display: none;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -371,7 +387,14 @@ def render_card(entry):
     warning = exp.get("_validation_warning", False)
 
     with st.container():
-        st.markdown(f'<div class="{card_cls}">', unsafe_allow_html=True)
+        # Top critical risk indicator
+        if rank == 1:
+            st.markdown(
+                '<div style="border-left:5px solid #dc2626;padding-left:1rem;margin-bottom:1rem;">'
+                '<span style="color:#dc2626;font-weight:700;font-size:0.875rem;text-transform:uppercase;">'
+                'Top Critical Risk</span></div>',
+                unsafe_allow_html=True,
+            )
 
         # Header with score
         h1, h2 = st.columns([5, 1])
@@ -381,15 +404,15 @@ def render_card(entry):
                 f'<div class="rank-badge {badge}">#{rank}</div>'
                 f'<div>'
                 f'<h3 style="margin:0;color:#1f2937;font-size:1.4rem;">{asset}</h3>'
-                f'<p style="margin:0;color:#4b5563;font-size:1rem;">'
+                f'<p style="margin:0;color:#58d7ed;font-size:1rem;">'
                 f'{env} · {service}</p></div></div>',
                 unsafe_allow_html=True,
             )
         with h2:
             st.markdown(
                 f'<div style="text-align:right;">'
-                f'<div style="font-size:2rem;font-weight:bold;color:#1f2937;">{score:.2f}</div>'
-                f'<div style="font-size:0.85rem;color:#6b7280;">RISK SCORE / 10</div></div>',
+                f'<div style="font-size:2rem;font-weight:bold;color:#58d7ed;">{score:.2f}</div>'
+                f'<div style="font-size:0.85rem;color:#58d7ed;">RISK SCORE / 10</div></div>',
                 unsafe_allow_html=True,
             )
 
@@ -412,9 +435,9 @@ def render_card(entry):
         with c1:
             st.markdown('<div class="label">Vulnerability Details</div>', unsafe_allow_html=True)
             st.markdown(
-                f"<span style='font-size:1.1rem;color:#1f2937;'><b>{vuln}</b></span>  \n"
-                f"<span style='color:#374151;font-size:1rem;'>{cve} · CVSS {cvss} · {severity}</span>  \n"
-                f"<span style='color:#4b5563;font-size:1rem;'>Patch: {'Yes' if patch else 'Missing'} | "
+                f"<span style='font-size:1.1rem;color:#58d7ed;'><b>{vuln}</b></span>  \n"
+                f"<span style='color:#58d7ed;font-size:1rem;'>{cve} · CVSS {cvss} · {severity}</span>  \n"
+                f"<span style='color:#58d7ed;font-size:1rem;'>Patch: {'Yes' if patch else 'Missing'} | "
                 f"Exploit: {'Yes' if exploit else 'No'} | Open {days_open}d</span>",
                 unsafe_allow_html=True,
             )
@@ -431,9 +454,9 @@ def render_card(entry):
         with c2:
             st.markdown('<div class="label">Business Context</div>', unsafe_allow_html=True)
             st.markdown(
-                f"<span style='font-size:1.1rem;color:#1f2937;'><b>{service}</b></span>  \n"
-                f"<span style='color:#374151;font-size:1rem;'>Compliance: {compliance}</span>  \n"
-                f"<span style='color:#4b5563;font-size:1rem;'>Data: {data_class}</span>",
+                f"<span style='font-size:1.1rem;color:#58d7ed;'><b>{service}</b></span>  \n"
+                f"<span style='color:#58d7ed;font-size:1rem;'>Compliance: {compliance}</span>  \n"
+                f"<span style='color:#58d7ed;font-size:1rem;'>Data: {data_class}</span>",
                 unsafe_allow_html=True,
             )
             
@@ -474,18 +497,16 @@ def render_card(entry):
 
         with st.expander("Recommended action & verification"):
             st.markdown(
-                f"<b style='font-size:1.05rem;color:#1f2937;'>Immediate action:</b>  \n"
-                f"<span style='color:#374151;font-size:1rem;'>{action}</span>"
+                f"<div class='expander-action'><b>Immediate action:</b><br>{action}</div>",
+                unsafe_allow_html=True,
             )
             st.markdown(
-                f"<b style='font-size:1.05rem;color:#1f2937;'>Success metric:</b>  \n"
-                f"<span style='color:#374151;font-size:1rem;'>{metric}</span>"
+                f"<div class='expander-action' style='margin-top:1rem;'><b>Success metric:</b><br>{metric}</div>",
+                unsafe_allow_html=True,
             )
             considered = exp.get("_candidates_considered", [])
             if considered:
                 st.caption(f"Candidates considered: {', '.join(considered)}")
-
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------- Sidebar with Better Colors & Sizing -----------------------------
 
