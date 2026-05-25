@@ -2,9 +2,14 @@ import pandas as pd
 import requests
 import io
 import os
+from pathlib import Path
 
 class DataIngestionEngine:
-    def __init__(self, data_dir="data/raw"):
+    def __init__(self, data_dir=None):
+        if data_dir is None:
+            # Use absolute path relative to this file
+            project_root = Path(__file__).resolve().parent.parent
+            data_dir = project_root / "data" / "raw"
         self.data_dir = data_dir
 
     def load_internal_data(self):
@@ -18,7 +23,7 @@ class DataIngestionEngine:
 
     def fetch_cisa_kev(self):
         # Define where the external data should live
-        external_dir = self.data_dir.replace("raw", "external")
+        external_dir = str(self.data_dir).replace("raw", "external")
         os.makedirs(external_dir, exist_ok=True) 
         
         kev_file_path = os.path.join(external_dir, "known_exploited_vulnerabilities.csv")
@@ -92,6 +97,6 @@ class DataIngestionEngine:
 
 # For testing locally:
 if __name__ == "__main__":
-    engine = DataIngestionEngine(data_dir="../data/raw")
+    engine = DataIngestionEngine()
     master_table = engine.build_master_risk_table()
     print(master_table[['vulnerability_name', 'asset_name', 'internet_exposed', 'threat_actor']].head())
