@@ -109,11 +109,36 @@ cd src
 python test_llm_real.py
 ```
 
-## Troubleshooting
+## Answers to Required Supporting Questions
 
-* **ChromaDB / SQLite Errors:** Use the "Clear caches & rebuild" button in the Streamlit sidebar to force a fresh index build.
-* **Missing API Key:** Ensure your `.env` file is in the root directory and properly formatted.
-* **Network Timeout on CISA KEV Fetch:** The system gracefully falls back to an empty DataFrame or a locally cached copy if the download fails.
+### Q1 — The Data Split
+
+**What I queried as structured records and why:** All five internal CSVs (assets, vulnerabilities, threats, business services, remediation hints) and the CISA KEV catalog are loaded into pandas DataFrames and joined on exact keys (`asset_id`, `cve`, `business_service`, `cveID`). They are already structured and require precise relational joins — embedding CVE-2023-4966 into a vector space and hoping for an exact match against CVE-2023-4966 in another vector would be slower, less reliable, and silently lossy. Left joins on threat intel naturally drop the 15 noise records that don't match any CVE, so noise filtering is a side effect of correct join semantics rather than fragile keyword logic.
+
+**What I embedded and why:** The NIST SP 800-53 Rev. 5 control catalog (~1,000 controls of multi-paragraph prose) is chunked, embedded with `BAAI/bge-small-en-v1.5`, and stored in ChromaDB. Finding the right control for a specific risk requires semantic understanding ("internet-exposed unpatched VPN" → SC-7 + SI-2 + SA-22), not exact keyword matching. The control text is too long and varied for filters, and the question being asked — "which paragraph of policy is most relevant?" — is the canonical retrieval problem embeddings were built for.
+
+---
+
+### Q2 — Where It Goes Wrong (Three Specific Failure Modes)
+
+**1. My scoring weights are static and encode TawasolPay's current priorities, not its situational ones.**
+* **The Context:** The 30/25/25/10/10 dimension split assumes ransomware-driven threat context is paramount. If next week the priority shifts (e.g., a PCI DSS audit in 30 days makes compliance scope dominant, or a board-mandated cloud migration makes hygiene the bottleneck), the rankings won't reflect that and may quietly mislead. 
+* **Mitigation Today:** Weights are exposed in the sidebar UI and as a class constant for transparency, and the score breakdown is visible per-risk so a reviewer can spot when a high "criticality" score is being washed out by a low "threat" score. 
+* **What I'd Add Next:** A config-driven weighting profile (e.g., `audit_mode`, `incident_response_mode`, `peacetime_mode`) selectable from the UI, with a small audit log noting which profile produced which briefing.
+
+**2. A new CVE that's actively exploited but not yet in CISA KEV will be under-ranked.**
+* **The Context:** CISA KEV is updated weekly. If a 0-day drops on Monday and TawasolPay's MDR sees it on Tuesday, the `knownRansomwareCampaignUse` field won't reflect it until the next CISA update. My system would score the threat dimension lower than it should, potentially burying the risk below known-but-older items. 
+* **Mitigation Today:** The internal `threat_intelligence.csv` and `ransomware_association` flag provide a redundant signal, weighted at 35% of the threat dimension specifically so the system doesn't depend solely on KEV. 
+* **What I'd Add Next:** A live NVD/EPSS lookup as a third cross-reference, and a fallback that flags any vulnerability seen in the MDR threat report but absent from KEV as `kev_lag_warning: True`.
+
+**3. The LLM may pick a candidate control that's semantically close but operationally wrong.**
+* **The Context:** Multi-angle retrieval returns 6–10 candidates; the LLM picks one. For a risk like "no EDR on production server," candidates might include both SI-4 (System Monitoring) and IR-4 (Incident Handling). The LLM might pick IR-4 because the prompt mentions "active campaign," but the more directly actionable control is SI-4. There's no ground truth to verify this against. 
+* **Mitigation Today:** The validation layer guarantees the picked control was retrieved, the system surfaces all candidates considered (`_candidates_considered`) so a reviewer can second-guess the choice, and the `recommended_action` field forces the LLM to commit to a concrete action that would expose mismatches. 
+* **What I'd Add Next:** A labeled evaluation set of (risk → canonical control) pairs to measure top-1 selection accuracy, and a rerank step using control-family priors learned from that set.
+
+### Q3 — One Thing I Would Change
+
+**Build a retrieval evaluation harness.** Right now I trust BGE + multi-query expansion to surface the right controls, validated only by a smoke test (`test_rag_real.py`) that checks whether any expected family appears in the top-5. That's a correctness floor, not a measure of quality — it doesn't tell me whether the most applicable control is at rank 1, 2, or 5, and it doesn't tell me when retrieval is silently degrading. Given another day, I'd hand-label 30–50 (risk → canonical NIST control) pairs with a security practitioner, then measure recall@1, recall@3, and MRR for the current pipeline. That benchmark would let me make principled decisions about query expansion (is one query enough? are six too many?), embedding model upgrades, and reranker addition. Without it, every "improvement" is guesswork. The reason this is the highest-leverage change is that retrieval quality is the upstream input to everything the LLM produces — a hallucinated explanation built on a wrong control is more dangerous than a missing one, because it looks authoritative.
 
 ## Customization
 
