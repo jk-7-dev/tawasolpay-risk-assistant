@@ -7,14 +7,25 @@ from pathlib import Path
 class DataIngestionEngine:
     def __init__(self, data_dir=None):
         if data_dir is None:
-            # Use absolute path relative to this file
+            # Compute absolute path based on this file's location
+            # __file__ is .../src/data_pipeline.py
+            # .parent is .../src/
+            # .parent.parent is the project root
             project_root = Path(__file__).resolve().parent.parent
-            data_dir = project_root / "data" / "raw"
-        self.data_dir = data_dir
+            self.data_dir = str(project_root / "data" / "raw")
+        else:
+            # If a path is passed, resolve it to absolute
+            data_path = Path(data_dir)
+            if not data_path.is_absolute():
+                # Resolve relative to this file's location, not CWD
+                project_root = Path(__file__).resolve().parent.parent
+                # Strip leading "../" if present and resolve from project root
+                data_path = (project_root / data_path).resolve()
+            self.data_dir = str(data_path)
 
     def load_internal_data(self):
         """Loads TawasolPay's internal CSV data into Pandas DataFrames."""
-        print("Loading internal CSVs...")
+        print(f"Loading internal CSVs from: {self.data_dir}")
         assets_df = pd.read_csv(os.path.join(self.data_dir, "assets.csv"))
         vulns_df = pd.read_csv(os.path.join(self.data_dir, "vulnerabilities.csv"))
         threats_df = pd.read_csv(os.path.join(self.data_dir, "threat_intelligence.csv"))
@@ -23,7 +34,7 @@ class DataIngestionEngine:
 
     def fetch_cisa_kev(self):
         # Define where the external data should live
-        external_dir = str(self.data_dir).replace("raw", "external")
+        external_dir = self.data_dir.replace("raw", "external")
         os.makedirs(external_dir, exist_ok=True) 
         
         kev_file_path = os.path.join(external_dir, "known_exploited_vulnerabilities.csv")
@@ -55,15 +66,12 @@ class DataIngestionEngine:
         kev_df = self.fetch_cisa_kev()
 
         # JOIN 1: Map Vulnerabilities to their Assets
-        # This tells us if a vulnerability is sitting on an internet-exposed asset
         master_df = pd.merge(vulns, assets, on="asset_id", how="left")
 
         # JOIN 2: Map the resulting table to Business Services
-        # This tells us the compliance and revenue impact if the asset goes down
         master_df = pd.merge(master_df, services, on="business_service", how="left")
 
         # JOIN 3: Map Active Threat Intelligence
-        # Match 'cve' in vulnerabilities to 'matched_cve_or_control' in threat intel
         threats_subset = threats[['matched_cve_or_control', 'threat_actor', 'campaign_name', 'ransomware_association']]
         master_df = pd.merge(
             master_df, 
@@ -73,7 +81,7 @@ class DataIngestionEngine:
             how="left"
         )
         
-        # JOIN 4: Map CISA KEV data (Is the US Gov tracking this as exploited?)
+        # JOIN 4: Map CISA KEV data
         kev_subset = kev_df[['cveID', 'knownRansomwareCampaignUse']]
         master_df = pd.merge(
             master_df,
@@ -97,6 +105,6 @@ class DataIngestionEngine:
 
 # For testing locally:
 if __name__ == "__main__":
-    engine = DataIngestionEngine()
+    engine = DataIngestionEngine()  # No argument needed - uses absolute path
     master_table = engine.build_master_risk_table()
     print(master_table[['vulnerability_name', 'asset_name', 'internet_exposed', 'threat_actor']].head())

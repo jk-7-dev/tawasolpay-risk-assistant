@@ -14,7 +14,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Configuration
-NIST_CSV_PATH = "../data/external/NIST_SP-800-53_rev5_catalog_load.csv"
+from pathlib import Path
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+NIST_CSV_PATH = _PROJECT_ROOT / "data" / "external" / "NIST_SP-800-53_rev5_catalog_load.csv"
+
 CHROMA_DIR = "../data/chroma_nist"
 COLLECTION_NAME = "nist_800_53"
 EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
@@ -28,13 +31,12 @@ def load_nist_csv() -> pd.DataFrame:
     """Load and validate NIST CSV file."""
     logger.info(f"Loading NIST CSV from {NIST_CSV_PATH}")
     try:
-        df = pd.read_csv(NIST_CSV_PATH)
+        df = pd.read_csv(str(NIST_CSV_PATH))
         logger.info(f"Loaded {len(df)} rows from NIST CSV")
         return df
     except FileNotFoundError:
         logger.error(f"NIST CSV not found at {NIST_CSV_PATH}")
         raise
-
 
 def build_chunks(df: pd.DataFrame) -> list[dict]:
     """

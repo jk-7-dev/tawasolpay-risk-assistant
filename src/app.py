@@ -222,7 +222,9 @@ def cached_rag_collection():
 @st.cache_data(show_spinner=False)
 def cached_master_table() -> pd.DataFrame:
     """Build the joined master risk table (assets × vulns × threats × KEV × services)."""
-    engine = DataIngestionEngine(data_dir="../data/raw")
+    from pathlib import Path
+    data_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
+    engine = DataIngestionEngine(data_dir=str(data_dir))
     return engine.build_master_risk_table()
 
 @st.cache_data(show_spinner=False)

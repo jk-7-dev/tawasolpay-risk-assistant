@@ -359,9 +359,11 @@ def save_briefing(json_results: List[Dict], human_text: str, output_dir: str = "
 def main():
     """Load top_5_risks.json from risk_engine, generate briefing, save both formats."""
     import pandas as pd
+    from pathlib import Path
     
-    input_path = "../top_5_risks.json"
-    output_dir = ".."
+    project_root = Path(__file__).resolve().parent.parent
+    input_path = project_root / "top_5_risks.json"
+    output_dir = project_root
 
     logger.info(f"Loading top risks from {input_path}")
     with open(input_path) as f:

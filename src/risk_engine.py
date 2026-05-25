@@ -312,9 +312,10 @@ class RiskScoringEngine:
 
 def main():
     """Example usage: load CSV, compute scores, print top 5."""
+    from pathlib import Path
+    project_root = Path(__file__).resolve().parent.parent
     # Load master table
-    df = pd.read_csv('../data/raw/master_risk_table.csv')
-    
+    df = pd.read_csv(project_root / 'data' / 'raw' / 'master_risk_table.csv')
     # Initialize engine
     engine = RiskScoringEngine(df)
     
@@ -325,10 +326,10 @@ def main():
     top_5 = engine.get_top_risks(n=5)
     # In main(), after getting top_5:
 
-    # 1. CSV — for analysts, Excel, BI tools
-    top_5.to_csv('../top_5_risks.csv', index=False)
+       # CSV — for analysts, Excel, BI tools
+    top_5.to_csv(project_root / 'top_5_risks.csv', index=False)
 
-    # 2. JSON — for APIs, dashboards, downstream automation
+    # JSON — for APIs, dashboards, downstream automation
     top_5_payload = {
         'generated_at': pd.Timestamp.now().isoformat(),
         'scoring_version': '1.0',
@@ -337,7 +338,7 @@ def main():
         'top_risks': top_5.to_dict(orient='records'),
     }
     import json
-    with open('../top_5_risks.json', 'w') as f:
+    with open(project_root / 'top_5_risks.json', 'w') as f:
         json.dump(top_5_payload, f, indent=2, default=str)
 
     print("\n" + "="*80)
