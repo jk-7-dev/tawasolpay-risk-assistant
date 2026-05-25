@@ -1,4 +1,3 @@
-```markdown
 # TawasolPay ThreatLens: AI-Powered Risk Intelligence
 
 **TawasolPay ThreatLens** is a live, multi-dimensional cyber risk analysis tool built with Streamlit. It leverages a Retrieval-Augmented Generation (RAG) architecture to map scored vulnerabilities to specific NIST SP 800-53 Rev. 5 controls, providing explainable and actionable remediation guidance via Groq-powered LLMs (Llama 3.3 70B).
@@ -6,13 +5,13 @@
 ## Features
 * **Multi-Dimensional Risk Scoring:** Automatically ingests and scores vulnerabilities across threat, exposure, business criticality, severity, and hygiene metrics.
 * **NIST 800-53 RAG Integration:** Uses ChromaDB and BAAI/bge-small-en-v1.5 embeddings to semantically retrieve the most relevant security controls.
-* **AI-Powered Briefings:** Generates executive-level explanations and recommended actions using Groq's high-speed inference.
-* **Interactive Dashboard:** A highly stylized, high-contrast Streamlit UI for analyzing top organizational risks in real-time.
+***AI-Powered Briefings:** Generates executive-level explanations and recommended actions using Groq's high-speed inference.
+***Interactive Dashboard:** A highly stylized, high-contrast Streamlit UI for analyzing top organizational risks in real-time.
 
 ## Prerequisites
 
-* **Python 3.10 or 3.11** (Recommended for compatibility with ChromaDB and PyTorch)
-* **Git**
+***Python 3.10 or 3.11** (Recommended for compatibility with ChromaDB and PyTorch)
+***Git**
 * A valid **Groq API Key**.
 
 ## Installation
