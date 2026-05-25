@@ -1,5 +1,5 @@
 """
-TawasolPay Risk Briefing — Streamlit UI
+TawasolPay CyberSentinel: Live Risk & Remediation Dashboard — Streamlit UI
 Wires DataIngestionEngine → RiskScoringEngine → rag_agent → explainer
 """
 import os
@@ -33,7 +33,7 @@ from explainer import explain_top_risks, format_briefing_entry, save_briefing
 # ----------------------------- Page Config -----------------------------
 
 st.set_page_config(
-    page_title="TawasolPay Risk Briefing",
+    page_title="TawasolPay CyberSentinel",
     page_icon="shield",
     layout="wide",
 )
@@ -295,7 +295,7 @@ def run_pipeline(top_n: int, status, progress, cards_slot):
     for i, risk in enumerate(top_records, 1):
         asset = risk.get("asset_name", "?")
         vuln = risk.get("vulnerability_name", "?")
-        status.info(f"Briefing {i}/{top_n}: {asset} — {vuln}")
+        status.info(f"Analyzing {i}/{top_n}: {asset} — {vuln}")
 
         single_json, _ = explain_top_risks([risk])
         if not single_json:
@@ -317,7 +317,7 @@ def run_pipeline(top_n: int, status, progress, cards_slot):
         progress.progress(0.55 + 0.45 * i / top_n)
 
     progress.progress(1.0)
-    status.success(f"Briefing complete — {len(results)} risks analyzed")
+    status.success(f"Dashboard complete — {len(results)} risks analyzed")
 
     # Stage 6: Persist artifacts
     try:
@@ -338,7 +338,7 @@ def run_pipeline(top_n: int, status, progress, cards_slot):
         )
         save_briefing(json_payload, human_text, output_dir=str(PROJECT_ROOT))
     except Exception as e:
-        st.warning(f"Could not save briefing artifacts: {e}")
+        st.warning(f"Could not save dashboard artifacts: {e}")
 
     return results
 
@@ -512,7 +512,7 @@ def render_card(entry):
 
 with st.sidebar:
     st.header("Configuration")
-    top_n = st.slider("Number of risks to brief", 3, 10, 5)
+    top_n = st.slider("Number of risks to analyze", 3, 10, 5)
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     
@@ -525,7 +525,7 @@ with st.sidebar:
             "3. Rank top N risks<br>"
             "4. Semantic NIST control retrieval<br>"
             "5. LLM-grounded explanations<br>"
-            "6. Save briefing artifacts"
+            "6. Save dashboard artifacts"
             "</span>",
             unsafe_allow_html=True,
         )
@@ -551,17 +551,17 @@ with st.sidebar:
 
 # ----------------------------- Main UI -----------------------------
 
-st.title("TawasolPay Cyber Risk Briefing")
+st.title("TawasolPay CyberSentinel: Live Risk & Remediation Dashboard")
 st.caption("Live multi-dimensional risk analysis with NIST 800-53 remediation guidance")
 
-if "briefing" not in st.session_state:
-    st.session_state.briefing = None
+if "dashboard" not in st.session_state:
+    st.session_state.dashboard = None
     st.session_state.generated_at = None
 
 col_btn, col_info = st.columns([1, 3])
 with col_btn:
     generate = st.button(
-        "Generate Risk Briefing",
+        "Generate Dashboard",
         type="primary",
         use_container_width=True,
     )
@@ -579,24 +579,24 @@ if generate:
     progress.progress(0)
     try:
         results = run_pipeline(top_n, status, progress, cards_slot)
-        st.session_state.briefing = results
+        st.session_state.dashboard = results
         st.session_state.generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         status.error(f"Pipeline failed: {e}")
         st.exception(e)
 
-elif st.session_state.briefing:
+elif st.session_state.dashboard:
     progress.empty()
     status.info(
-        f"Showing cached briefing from {st.session_state.generated_at}. "
+        f"Showing cached dashboard from {st.session_state.generated_at}. "
         "Click Generate to refresh."
     )
     with cards_slot.container():
-        for entry in st.session_state.briefing:
+        for entry in st.session_state.dashboard:
             render_card(entry)
 else:
     progress.empty()
-    status.info("Click Generate Risk Briefing to run the live pipeline.")
+    status.info("Click Generate Dashboard to run the live pipeline.")
 
 # Footer
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
